@@ -1,0 +1,32 @@
+#!/usr/bin/env python
+import click
+from colorama import Fore, Back, Style
+
+from rodent import actions
+
+
+def echo_title(s, text_color=Fore.GREEN, separator_color=Fore.BLUE):
+    separator = len(s) * '-'
+    click.echo(separator_color + separator + Style.RESET_ALL)
+    click.echo(text_color + s + Style.RESET_ALL)
+    click.echo(separator_color + separator + Style.RESET_ALL)
+
+@click.group()
+def cli():
+    pass
+
+@click.command()
+def say_hello():
+    click.echo(Fore.GREEN + "Hello" + Style.RESET_ALL)
+
+@click.command()
+def list_files():
+    echo_title("Listing files in scope")
+    actions.list_files()
+
+
+cli.add_command(say_hello)
+cli.add_command(list_files)
+
+if __name__ == '__main__':
+    cli()
