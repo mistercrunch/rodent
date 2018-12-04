@@ -17,6 +17,8 @@ specific language governing permissions and limitations
 under the License.
 """
 import os
+import re
+import sys
 
 import click
 import git
@@ -37,7 +39,7 @@ LICENSE_WRAPPER = {
     "python": lambda s: '"""\n{}\n"""'.format(s),
     "javascript": js_wrapper,
 }
-SPECIAL_FIRST_LINES = ["#!", "# -*-"]
+SPECIAL_FIRST_LINES = ["#!", "# -*-", "from __future__ "]
 
 
 def get_commented_license(license_type, language):
@@ -51,20 +53,18 @@ def get_extension(filename):
     return splitted[-1] if len(splitted) > 1 else ""
 
 
-def files_in_scope(folder="./", extentions=None):
+def files_in_scope(file_regex=None):
     file_list = []
-    if not extentions:
-        extentions = EXT_MAP.keys()
-
     repo_files = git.cmd.Git().ls_files().split()
-    for filename in repo_files:
-        ext = get_extension(filename)
-        if not extentions or ext in extentions:
-            yield filename
+    if not file_regex:
+        return list([s for s in repo_files])
+    return [s for s in repo_files if re.match(file_regex, s)]
 
 
-def list_files(folder="./", extentions=None):
-    for filename in files_in_scope(folder, extentions):
+def list_files(file_regex=None):
+    files = files_in_scope(file_regex)
+    print("list_files", file_regex, len(files), files)
+    for filename in files_in_scope(file_regex):
         print(filename)
 
 
@@ -86,6 +86,7 @@ def check(license_type="asf", folder="./", extentions=None):
         click.echo(click.style("Check failed", fg="red"))
         for s in failed:
             click.echo(click.style("* " + s, fg="red"))
+        sys.exit(1)
     else:
         click.echo(click.style("Check passed!", fg="green"))
 

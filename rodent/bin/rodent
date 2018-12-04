@@ -15,9 +15,10 @@ def cli():
     pass
 
 @click.command()
-def list():
+@click.option('-f')
+def list(f=None):
     echo_title("Listing files in scope")
-    actions.list_files()
+    actions.list_files(f)
 
 @click.command()
 def apply():
