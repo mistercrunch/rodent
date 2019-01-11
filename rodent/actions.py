@@ -1,26 +1,24 @@
-"""
-Licensed to the Apache Software Foundation (ASF) under one
-or more contributor license agreements.  See the NOTICE file
-distributed with this work for additional information
-regarding copyright ownership.  The ASF licenses this file
-to you under the Apache License, Version 2.0 (the
-"License"); you may not use this file except in compliance
-with the License.  You may obtain a copy of the License at
-
-  http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing,
-software distributed under the License is distributed on an
-"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-KIND, either express or implied.  See the License for the
-specific language governing permissions and limitations
-under the License.
-"""
-import os
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
 import re
 import sys
 
 import click
+
 import git
 
 from rodent.licenses import LICENSE_MAP
@@ -34,9 +32,15 @@ def js_wrapper(s):
     return "\n".join(lines)
 
 
+def py_wrapper(s):
+    lines = []
+    lines += ["# " + line if line else "#" for line in s.split("\n")]
+    return "\n".join(lines)
+
+
 EXT_MAP = {"js": "javascript", "jsx": "javascript", "py": "python"}
 LICENSE_WRAPPER = {
-    "python": lambda s: '"""\n{}\n"""'.format(s),
+    "python": py_wrapper,
     "javascript": js_wrapper,
 }
 SPECIAL_FIRST_LINES = ["#!", "# -*-", "from __future__ "]
@@ -54,33 +58,29 @@ def get_extension(filename):
 
 
 def files_in_scope(file_regex=None):
-    file_list = []
     repo_files = git.cmd.Git().ls_files().split()
     if not file_regex:
-        return list([s for s in repo_files])
+        return repo_files
     return [s for s in repo_files if re.match(file_regex, s)]
 
 
 def list_files(file_regex=None):
-    files = files_in_scope(file_regex)
-    print("list_files", file_regex, len(files), files)
     for filename in files_in_scope(file_regex):
         print(filename)
 
 
-def apply(license_type="asf", folder="./", extentions=None):
-    for filename in files_in_scope(folder, extentions):
+def apply(file_regex=None, license_type="asf"):
+    for filename in files_in_scope(file_regex):
         apply_to_file(filename, license_type)
     click.echo(click.style("All done! 🍰", fg="white"))
 
 
-def check(license_type="asf", folder="./", extentions=None):
+def check(file_regex=None, license_type="asf"):
     failed = []
-    for filepath in files_in_scope(folder, extentions):
+    for filepath in files_in_scope(file_regex):
         file_content = read_file(filepath)
         language = get_language(filepath)
-        commented_license_text = get_commented_license(license_type, language)
-        if not check_license(file_content, language, license_type):
+        if language and not check_license(file_content, language, license_type):
             failed.append(filepath)
     if failed:
         click.echo(click.style("Check failed", fg="red"))
@@ -113,8 +113,12 @@ def squeeze_in_license(file_content, commented_license_text):
 def apply_to_file(filepath, license_type="asf"):
     file_content = read_file(filepath)
     language = get_language(filepath)
-    commented_license_text = get_commented_license(license_type, language)
-    if file_content and not check_license(file_content, language, license_type):
+    if (
+            language and
+            file_content and not
+            check_license(file_content, language, license_type)
+    ):
+        commented_license_text = get_commented_license(license_type, language)
         click.echo(click.style("[adding license] - " + filepath, fg="green"))
         with open(filepath, "w") as f:
             new_content = squeeze_in_license(file_content, commented_license_text)
@@ -131,5 +135,8 @@ def check_license(file_content, language, license_type="asf"):
 
 
 def read_file(filepath):
-    with open(filepath, "r") as f:
-        return f.read()
+    try:
+        with open(filepath, "r") as f:
+            return f.read()
+    except Exception:
+        pass

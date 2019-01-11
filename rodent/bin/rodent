@@ -10,25 +10,31 @@ def echo_title(s, text_color='yellow', separator_color='blue'):
     click.echo(click.style(s, fg=text_color))
     click.echo(click.style(separator, fg=separator_color))
 
+
 @click.group()
 def cli():
     pass
 
+
 @click.command()
-@click.option('-f')
-def list(f=None):
+@click.option('-f', '--file-regex')
+def list(file_regex=None):
     echo_title("Listing files in scope")
-    actions.list_files(f)
+    actions.list_files(file_regex)
+
 
 @click.command()
-def apply():
+@click.option('-f', '--file-regex')
+def apply(file_regex=None):
     echo_title("Applying license to files")
-    actions.apply()
+    actions.apply(file_regex)
+
 
 @click.command()
-def check():
+@click.option('-f', '--file-regex')
+def check(file_regex=None):
     echo_title("Checking for missing licenses")
-    actions.check()
+    actions.check(file_regex)
 
 
 cli.add_command(check)
