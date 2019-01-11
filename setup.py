@@ -34,7 +34,7 @@ version_string = "0.1.0"
 
 setup(
     name="rodent",
-    description="A utility CLI to manage license headers",
+    description="A CLI utility to manage license headers",
     long_description=long_description,
     long_description_content_type="text/markdown",
     version=version_string,
