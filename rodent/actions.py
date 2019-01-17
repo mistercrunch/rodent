@@ -38,10 +38,16 @@ def py_wrapper(s):
     return "\n".join(lines)
 
 
-EXT_MAP = {"js": "javascript", "jsx": "javascript", "py": "python"}
+EXT_MAP = {
+    "js": "javascript",
+    "css": "css",
+    "jsx": "javascript",
+    "py": "python",
+}
 LICENSE_WRAPPER = {
     "python": py_wrapper,
     "javascript": js_wrapper,
+    "css": js_wrapper,
 }
 SPECIAL_FIRST_LINES = ["#!", "# -*-", "from __future__ "]
 
