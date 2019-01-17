@@ -14,6 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+import os
 import re
 import sys
 
@@ -24,7 +25,7 @@ import git
 from rodent.licenses import LICENSE_MAP
 
 
-def js_wrapper(s):
+def js_wrapper(s, filepath):
     lines = []
     lines.append("/**")
     lines += [" * " + line if line else " *" for line in s.split("\n")]
@@ -32,10 +33,20 @@ def js_wrapper(s):
     return "\n".join(lines)
 
 
-def py_wrapper(s):
+def py_wrapper(s, filepath):
     lines = []
     lines += ["# " + line if line else "#" for line in s.split("\n")]
     return "\n".join(lines)
+
+
+def html_wrapper(s, filepath):
+    jinja_regex = os.environ.get("RODENT_JINJA_REGEX")
+    lines = []
+    if jinja_regex and re.match(jinja_regex, filepath):
+        lines += ["  " + line if line else "" for line in s.split("\n")]
+        return "{#\n" + "\n".join(lines) + "\n#}"
+    lines += ["  " + line if line else "" for line in s.split("\n")]
+    return "<!--\n" + "\n".join(lines) + "\n-->"
 
 
 EXT_MAP = {
@@ -43,19 +54,21 @@ EXT_MAP = {
     "css": "css",
     "jsx": "javascript",
     "py": "python",
+    "html": "html",
 }
 LICENSE_WRAPPER = {
     "python": py_wrapper,
     "javascript": js_wrapper,
     "css": js_wrapper,
+    "html": html_wrapper,
 }
 SPECIAL_FIRST_LINES = ["#!", "# -*-", "from __future__ "]
 
 
-def get_commented_license(license_type, language):
+def get_commented_license(license_type, language, filename):
     license_text = LICENSE_MAP[license_type]
     license_type_mutator = LICENSE_WRAPPER[language]
-    return license_type_mutator(license_text)
+    return license_type_mutator(license_text, filename)
 
 
 def get_extension(filename):
@@ -86,7 +99,7 @@ def check(file_regex=None, license_type="asf"):
     for filepath in files_in_scope(file_regex):
         file_content = read_file(filepath)
         language = get_language(filepath)
-        if language and not check_license(file_content, language, license_type):
+        if language and not check_license(file_content, language, license_type, filepath):
             failed.append(filepath)
     if failed:
         click.echo(click.style("Check failed", fg="red"))
@@ -122,9 +135,9 @@ def apply_to_file(filepath, license_type="asf"):
     if (
             language and
             file_content and not
-            check_license(file_content, language, license_type)
+            check_license(file_content, language, license_type, filepath)
     ):
-        commented_license_text = get_commented_license(license_type, language)
+        commented_license_text = get_commented_license(license_type, language, filepath)
         click.echo(click.style("[adding license] - " + filepath, fg="green"))
         with open(filepath, "w") as f:
             new_content = squeeze_in_license(file_content, commented_license_text)
@@ -133,8 +146,8 @@ def apply_to_file(filepath, license_type="asf"):
         click.echo(click.style("[skipping] - " + filepath, fg="red"))
 
 
-def check_license(file_content, language, license_type="asf"):
-    commented_license_text = get_commented_license(license_type, language)
+def check_license(file_content, language, license_type="asf", filepath=None):
+    commented_license_text = get_commented_license(license_type, language, filepath)
     if not file_content:
         return True
     return commented_license_text in file_content
