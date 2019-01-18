@@ -143,10 +143,12 @@ def apply_to_file(filepath, license_type="asf"):
             new_content = squeeze_in_license(file_content, commented_license_text)
             f.write(new_content)
     else:
-        click.echo(click.style("[skipping] - " + filepath, fg="red"))
+        click.echo(click.style("[skipping] - " + filepath, fg="yellow"))
 
 
 def check_license(file_content, language, license_type="asf", filepath=None):
+    if '[LICENSE TBD]' in file_content:
+        return True
     commented_license_text = get_commented_license(license_type, language, filepath)
     if not file_content:
         return True
