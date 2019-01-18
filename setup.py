@@ -30,7 +30,7 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 with io.open("README.md", encoding="utf-8") as f:
     long_description = f.read()
 
-version_string = "0.1.0"
+version_string = "0.1.1"
 
 setup(
     name="rodent",
