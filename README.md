@@ -22,3 +22,4 @@ files that are affected.
 
 * Currently only works for py/js/jsx, can easily be extended to support
   more file types
+TEST
